@@ -12,15 +12,24 @@ import { copyText, downloadText } from './lib/download';
 import { clear, load, save } from './lib/storage';
 
 export const App = () => {
-  const [initial] = useState(() => load());
-  const [done, setDone] = useState<Set<string>>(() => new Set(initial.done));
-  const [siteName, setSiteName] = useState(initial.siteName);
+  // Match the prerendered HTML on the first client render. Restore browser-only
+  // progress after hydration, before enabling persistence of subsequent edits.
+  const [done, setDone] = useState<Set<string>>(() => new Set());
+  const [siteName, setSiteName] = useState('');
+  const [storageReady, setStorageReady] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [remainingOnly, setRemainingOnly] = useState(false);
 
   useEffect(() => {
-    save({ siteName, done: [...done] });
-  }, [siteName, done]);
+    const initial = load();
+    setDone(new Set(initial.done));
+    setSiteName(initial.siteName);
+    setStorageReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (storageReady) save({ siteName, done: [...done] });
+  }, [siteName, done, storageReady]);
 
   const total = useMemo(() => score(done), [done]);
   const scoped = useMemo(() => scopedItems(filter), [filter]);
@@ -51,9 +60,11 @@ export const App = () => {
         <section className="container hero" aria-labelledby="hero-heading">
           <h1 id="hero-heading">Make your site agent-ready</h1>
           <p>
-            A {items.length}-point checklist for websites that people and AI agents can both use. Tick what you have,
-            then download the report.
+            A {items.length}-point checklist for websites that people and AI agents can both use.
           </p>
+          <noscript>
+            <p>All items are readable below. Enable JavaScript to save progress, filter items and create a report.</p>
+          </noscript>
         </section>
 
         <div className="container checklist" id="checklist">

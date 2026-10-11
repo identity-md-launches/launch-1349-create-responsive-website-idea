@@ -1,3 +1,4 @@
 # Agent Ready is a static, public site. Automated readers may fetch every path.
+# The production build adds a Sitemap directive when SITE_URL is supplied.
 User-agent: *
 Allow: /

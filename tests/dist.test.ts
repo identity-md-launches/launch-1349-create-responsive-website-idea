@@ -2,6 +2,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { items } from '../src/data/checklist';
 
 const dist = resolve(__dirname, '..', 'dist');
 const indexPath = resolve(dist, 'index.html');
@@ -15,15 +16,59 @@ describe('dist/index.html', () => {
   const html = existsSync(indexPath) ? readFileSync(indexPath, 'utf8').replace(/\s+/g, ' ') : '';
 
   const meta = (attr: string, name: string): string | undefined =>
-    html.match(new RegExp(`<meta ${attr}="${name}" content="([^"]*)"`))?.[1];
+    new DOMParser().parseFromString(html, 'text/html')
+      .querySelector(`meta[${attr}="${name}"]`)?.getAttribute('content') ?? undefined;
 
   it('has a title, description, favicon and Open Graph tags', () => {
     expect(html).toMatch(/<title>[^<]{10,}<\/title>/);
     expect(meta('name', 'description')?.length ?? 0).toBeGreaterThan(20);
     expect(html).toMatch(/<link rel="icon"[^>]*href="\.\/favicon\.svg"/);
     expect(meta('property', 'og:title')?.length ?? 0).toBeGreaterThan(5);
-    expect(meta('property', 'og:image')).toBe('./og.png');
+    expect(meta('property', 'og:image')).toMatch(/^(\.\/og\.png|https:\/\/.+\/og\.png)$/);
     expect(meta('property', 'og:description')?.length ?? 0).toBeGreaterThan(5);
+  });
+
+  it('contains the complete readable checklist before JavaScript runs', () => {
+    const page = new DOMParser().parseFromString(html, 'text/html');
+    expect(page.querySelectorAll('main')).toHaveLength(1);
+    expect(page.querySelector('h1')?.textContent).toBe('Make your site agent-ready');
+    expect(page.querySelectorAll('.item input[type="checkbox"]')).toHaveLength(15);
+    for (const item of items) {
+      expect(page.body.textContent).toContain(item.title);
+      expect(page.body.textContent).toContain(item.why);
+      expect(page.body.textContent).toContain(item.how);
+    }
+    expect(page.querySelector('.score-value')?.textContent).toBe('0 of 15 done');
+    expect(page.querySelector('noscript')?.textContent).toContain('Enable JavaScript');
+  });
+
+  it('provides a WebPage JSON-LD block with the actual description', () => {
+    const page = new DOMParser().parseFromString(html, 'text/html');
+    const blocks = page.querySelectorAll('script[type="application/ld+json"]');
+    expect(blocks).toHaveLength(1);
+    expect(JSON.parse(blocks[0]!.textContent!)).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Agent Ready',
+      description: page.querySelector('meta[name="description"]')?.getAttribute('content'),
+    });
+  });
+
+  it('keeps publication URLs consistent when a public address is configured', () => {
+    const page = new DOMParser().parseFromString(html, 'text/html');
+    const url = page.querySelector('meta[property="og:url"]')?.getAttribute('content');
+    if (url) {
+      expect(page.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(url);
+      expect(meta('property', 'og:image')).toBe(new URL('og.png', url).href);
+      expect(meta('name', 'twitter:image')).toBe(new URL('og.png', url).href);
+      const sitemap = new DOMParser().parseFromString(readFileSync(resolve(dist, 'sitemap.xml'), 'utf8'), 'application/xml');
+      expect(sitemap.querySelector('parsererror')).toBeNull();
+      expect(sitemap.querySelector('loc')?.textContent).toBe(url);
+      expect(readFileSync(resolve(dist, 'robots.txt'), 'utf8')).toContain(`Sitemap: ${new URL('sitemap.xml', url).href}`);
+    } else {
+      expect(existsSync(resolve(dist, 'sitemap.xml'))).toBe(false);
+      expect(readFileSync(resolve(dist, 'robots.txt'), 'utf8')).not.toContain('Sitemap:');
+    }
   });
 
   it('references only relative asset URLs that exist', () => {

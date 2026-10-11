@@ -130,7 +130,7 @@ describe('App', () => {
   it('exposes a coherent heading outline and landmarks', () => {
     render(<App />);
     const nav = screen.getByRole('navigation', { name: 'Site' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(3);
+    expect(within(nav).getAllByRole('link')).toHaveLength(2);
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getAllByRole('heading', { level: 2 }).length).toBeGreaterThanOrEqual(3);

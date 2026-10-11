@@ -22,9 +22,6 @@ export const Header = () => (
       <nav className="site-nav" aria-label="Site">
         <ul>
           <li>
-            <a href="#checklist">Checklist</a>
-          </li>
-          <li>
             <a href="#principles">Principles</a>
           </li>
           <li>

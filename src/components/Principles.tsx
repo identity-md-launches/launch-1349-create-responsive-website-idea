@@ -6,7 +6,7 @@ export const Principles = () => (
       <div className="section-header">
         <h2 id="principles-heading">Five things an agent needs</h2>
         <p>
-          Each checklist item belongs to one of these. The good news: every one of them also helps a person using a
+          Each checklist item belongs to one of these. Every one of them also helps a person using a
           screen reader, a slow connection or a small screen.
         </p>
       </div>

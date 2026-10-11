@@ -4,7 +4,7 @@ This documents the design as implemented in the final source. Every value below 
 
 ## Overview
 
-Agent Ready is a single-page checklist tool for web developers and product teams. The visual character is calm and utilitarian: a warm off-white page, white cards with a hairline shadow, one deep green accent used only for the primary action, progress and selected state, and a system sans-serif stack. Hierarchy comes from size and weight, not from color. Density is moderate: 16px body text, 44px controls, 16px card padding on small screens and 24px from 40rem.
+Agent Ready is a single-page checklist tool for web developers and product teams. The visual character is calm and utilitarian: a warm off-white page, white cards with a hairline shadow, one deep green accent used only for the primary action, progress and selected state, and a system sans-serif stack. Hierarchy comes from size and weight, not from color. Density is moderate: 16px body text, 44px buttons and inputs, 40px category pills, 16px card padding on small screens and 24px from 40rem.
 
 System-wide rules: the two-tier color tokens, the six-step type scale, the spacing steps, the card and button components, and the focus treatment. Page-specific arrangements: the hero (headline plus one line), the side panel plus item list grid, and the five-column principles grid.
 
@@ -35,7 +35,7 @@ Measured contrast (WCAG 2, computed from the rendered sRGB pixels in Chromium, s
 
 ## Typography
 
-Font: `--font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`. No font files are bundled; the page uses whichever of these the device has. Weights used: 400 (body), 500 (pill labels, field labels, Done suffix), 600 (buttons, item titles, card titles, strong), 650 (headings and the score value). Font smoothing is set once on `html`.
+Font: `--font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`. No font files are bundled; the page uses whichever of these the device has. Weights used: 400 (body), 500 (pill labels, field labels, Done suffix), 600 (headings, brand, score value, buttons, item titles, card titles, strong). Font smoothing is set once on `html`.
 
 Six sizes, one scale (`src/styles.css`):
 
@@ -58,12 +58,12 @@ Container: `.container` is 100% wide up to `--container: 72rem` (1152px), center
 
 Breakpoints come from the content, in rem:
 
-- 40rem (640px): card padding grows to 24px, gutter to 24px, the principles grid becomes two columns, the filter row stops bleeding to the card edge.
+- 40rem (640px): card padding grows to 24px, gutter to 24px, the principles grid becomes two columns, with the final Trust card spanning both.
 - 48rem (768px): `h1` grows to 44px, hero padding grows.
-- 56rem (896px): the checklist becomes a two-column grid, `17rem minmax(0, 1fr)`, with the score and filter panel at top-left, the report card below it, and the items on the right (`grid-template-areas` in `.checklist`). Report actions stack vertically. Category pills wrap instead of scrolling.
-- 64rem (1024px): the principles grid becomes five columns.
+- 56rem (896px): the checklist becomes a two-column grid, `17rem minmax(0, 1fr)`, with the score and filter panel at top-left, the report card below it, and the items on the right (`grid-template-areas` in `.checklist`). Report actions stack vertically. Category pills continue to wrap within the sidebar.
+- 64rem (1024px): the principles grid becomes five columns and the final card returns to a single column.
 
-Mobile order (below 56rem): hero, progress card, category card, item list, report card, principles, about. This keeps the first checklist item on the first screen at 390 wide (its checkbox bottom measured at 752px of an 844px viewport). On narrow screens the category pills form one horizontally scrolling row that bleeds to the card edge so the last pill peeks past it, hinting at the hidden options. The header nav wraps to a second row when the brand and links do not fit on one line.
+Mobile order (below 56rem): hero, progress card, category card, item list, report card, principles, about. This keeps the first checklist item on the first screen at 390 wide (its checkbox bottom measured at 746px of an 844px viewport). Category pills wrap at every width, with 4px of block padding and visible overflow to preserve the complete focus ring. All six options are visible at 390px. The header has two utility links and stays on one row at 390px; it wraps naturally at 320px.
 
 Overflow: no horizontal overflow at 320, 390, 768, 1280 or 1440 (measured). Text containers have no fixed heights.
 
@@ -84,13 +84,13 @@ Rounded elements are not nested inside each other except buttons inside cards, w
 
 All components are React function components with no exported props API beyond what is listed; they are patterns to copy within this site rather than a library.
 
-**Button** (`.button`, `.button-primary` in `src/styles.css`; used in `src/components/ReportActions.tsx` and `ItemList.tsx`). 44px tall, 15px/600 text, 10px radius. Neutral: white surface with a strong border, hover tints to `--color-bg-hover` (hover gated with `@media (hover: hover)`). Primary: `--color-accent-solid` fill, white text, darker fill on hover. Press feedback is `scale: 0.96`, only under `prefers-reduced-motion: no-preference`. Transitions name their properties (`background-color, border-color, color, scale`) at 150ms with `cubic-bezier(0.2, 0, 0, 1)`. Native `disabled` is used for "Reset progress" when there is nothing to reset. Labels are verb-first: Download report, Copy report, Reset progress, Clear all progress, Cancel, Show all items.
+**Button** (`.button`, `.button-primary` in `src/styles.css`; used in `src/components/ReportActions.tsx` and `ItemList.tsx`). 44px tall, 15px/600 text, 10px radius. Neutral: white surface with a strong border, hover tints to `--color-bg-hover` (hover gated with `@media (hover: hover)`). Primary: `--color-accent-solid` fill, white text, darker fill on hover. Press feedback is `scale: 0.96`, only under `prefers-reduced-motion: no-preference`. Transitions name their properties (`background-color, border-color, color, scale`) at 150ms with `cubic-bezier(0.2, 0, 0, 1)`. Native `disabled` is used for "Reset progress" when there is nothing to reset. Disabled buttons use `--color-text-secondary`, `--color-border` and `cursor: default`; hover tint and press scaling apply only to enabled buttons. Labels are verb-first: Download report, Copy report, Reset progress, Clear all progress, Cancel, Show all items.
 
 **Card** (`.card`). White surface, 16px radius, shadow-as-border, 16px padding (24px from 40rem). `.card-title` is a 15px/600 secondary-colored heading-like label.
 
-**Score** (`src/components/Score.tsx`). "N of 15 done" in `--text-xl`/650 plus a percentage, inside a `role="status"` paragraph so updates are announced politely. The bar below is decorative (`aria-hidden`), filled with `--color-accent-solid`, animated only under no-preference. In forced-colors mode the bar gets a `CanvasText` border and fill.
+**Score** (`src/components/Score.tsx`). "N of 15 done" in `--text-xl`/600 plus a percentage, inside a `role="status"` paragraph so updates are announced politely. The bar below is decorative (`aria-hidden`), filled with `--color-accent-solid`, animated only under no-preference. In forced-colors mode the bar gets a `CanvasText` border and fill.
 
-**Category pill** (`.pill` in `src/components/Filters.tsx`). A native radio input stretched invisibly over a label, so the whole pill is the target and arrow keys move between options. Selected: `--color-accent-bg` background, `--color-accent-text` text and border, weight 600, and a check glyph drawn with a CSS mask so the state does not depend on color. Focus ring is drawn on the pill via `:has(input:focus-visible)`.
+**Category pill** (`.pill` in `src/components/Filters.tsx`). A native radio input stretched invisibly over a label, so the whole pill is the target and arrow keys move between options. Selected: `--color-accent-bg` background, `--color-accent-text` text and border, weight 600, and a check glyph drawn with a CSS mask so the state does not depend on color. Focus ring is drawn on the pill via `:has(input:focus-visible)`. `.filter-options` wraps and has no scroll clipping, so the full 2px ring and 2px offset remain visible.
 
 **Switch** (`.switch`). A native checkbox with `accent-color` and its label text in one 44px-tall label.
 
@@ -102,7 +102,7 @@ All components are React function components with no exported props API beyond w
 
 **Status line** (`.status`). A polite `role="status"` paragraph with a reserved minimum height, so copied, downloaded, reset and confirmation messages do not shift the layout.
 
-**Header and nav** (`src/components/Header.tsx`). Brand mark plus "Agent Ready" link to `#top`, and a `nav` labeled "Site" with three hash links styled as 44px pill-shaped links in secondary color. A "Skip to checklist" link is the first focusable element.
+**Header and nav** (`src/components/Header.tsx`). Brand mark plus "Agent Ready" link to `#top`, and a `nav` labeled "Site" with two hash links (Principles and About) styled as 44px pill-shaped links in secondary color. A "Skip to checklist" link is the first focusable element.
 
 **Focus**: `:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px }` everywhere; verified visible on the page background, white surface, the selected pill and the filled primary button. No `outline: none` anywhere.
 
@@ -119,4 +119,6 @@ All components are React function components with no exported props API beyond w
 - Any new motion goes inside `@media (prefers-reduced-motion: no-preference)` and names its properties.
 - Keep the site a single page with hash links and relative asset URLs. Do not add client-side routes that need server rewrites.
 
-Recipe for one more page: copy `index.html`, point it at a new entry that renders `Header`, a hero section, your content in `.section .container` blocks and the footer from `App.tsx`; add it to `vite.config.ts` `build.rollupOptions.input`; reuse `.card`, `.button`, `.field` and the tokens; rebuild and commit `dist/`.
+The production page is prerendered by `scripts/prerender.mjs`; `src/main.tsx` hydrates it. `App` uses a deterministic empty initial state, restores browser storage in an effect and then enables saving. Its `noscript` message explains the limits of the readable HTML-only version. JSON-LD lives in `index.html`; optional public-address metadata is generated using `SITE_URL`.
+
+Recipe for one more page: copy `index.html`, point it at a new entry that renders `Header`, a hero section, your content in `.section .container` blocks and the footer from `App.tsx`; add it to `vite.config.ts` `build.rollupOptions.input`; extend the prerender script to write that page's markup; reuse `.card`, `.button`, `.field` and the tokens; rebuild and commit `dist/`.
