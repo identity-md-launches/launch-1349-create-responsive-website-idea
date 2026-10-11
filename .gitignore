@@ -1,0 +1,7 @@
+# Dependencies and caches are never committed. dist/ IS committed: the
+# publisher serves the export and does not rebuild.
+node_modules/
+.vite/
+*.log
+.DS_Store
+test/scratch/

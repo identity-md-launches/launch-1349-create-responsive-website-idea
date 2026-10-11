@@ -1,0 +1,3 @@
+# Agent Ready is a static, public site. Automated readers may fetch every path.
+User-agent: *
+Allow: /
